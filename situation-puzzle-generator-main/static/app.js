@@ -102,6 +102,16 @@ function generateForm() {
     finalSubmitButton.onclick = submitDraft;
     finalGenerateButtonDiv.appendChild(finalSubmitButton);
 
+    // Final generate button
+    const playButtonDiv = document.getElementById("play-button-div")
+    const playButton = document.createElement('button');
+    playButton.className = 'submit-button';
+    playButton.id="play-button";
+    playButton.textContent = 'Start Playing';
+    playButton.style.display = 'none';
+    playButton.onclick = startPlay;
+    playButtonDiv.appendChild(playButton);
+
 
     // TODO: remove
     // generateFinalStory()
@@ -124,6 +134,10 @@ function selectAnswer(section, answer) {
 
 function revealFinalGenerateButton() {
     document.getElementById("final-submit-button").style.display = 'block';
+}
+
+function revealPlayButton() {
+    document.getElementById("play-button").style.display = 'block';
 }
 
 function validateInput(section, input) {
@@ -275,6 +289,7 @@ async function submitDraft() {
         finalstorydiv.textContent = JSON.stringify(cluesToHide);
         finalstorydiv.style.display = "block";
         generateFinalStory();
+        revealPlayButton();
     };
 }
 
@@ -323,41 +338,41 @@ async function submitDraft() {
 //     });
 // }
 
-function generatePlayRound(finalstorydiv, round)
+function generateFinalStoryElement(finalstorydiv, round, callText, responseText)
 {
-    playRoundTile = document.createElement('div')
-    playRoundTile.className = "round-container";
-    playRoundTile.style = "margin-left: 10px"
+    var storyElem = document.createElement('div')
+    storyElem.className = "round-container";
+    storyElem.style = "margin-left: 10px"
 
-    storyTitleTextDiv = document.createElement('div')
+    var storyTitleTextDiv = document.createElement('div')
     storyTitleText = document.createElement('h1');
     storyTitleText.className = "text-uppercase fs-4 mb-3 mt-2";
-    storyTitleText.textContent = "Puzzle:\n";
+    storyTitleText.textContent = callText + ":\n";
     storyTitleTextDiv.appendChild(storyTitleText);
-    playRoundTile.appendChild(storyTitleTextDiv);
+    storyElem.appendChild(storyTitleTextDiv);
 
-    storyTextDiv = document.createElement('div')
+    var storyTextDiv = document.createElement('div')
     storyText = document.createElement('text-start');
     storyText.className = "mb-5";
     storyText.textContent = round[0];
     storyTextDiv.appendChild(storyText);
-    playRoundTile.appendChild(storyTextDiv);
+    storyElem.appendChild(storyTextDiv);
 
-    answerTitleTextDiv = document.createElement('div')
+    var answerTitleTextDiv = document.createElement('div')
     answerTitleText = document.createElement('h1');
     answerTitleText.className = "text-uppercase fs-4 mb-3 mt-5";
-    answerTitleText.textContent = "Answer:\n";
+    answerTitleText.textContent = responseText + ":\n";
     answerTitleTextDiv.appendChild(answerTitleText);
-    playRoundTile.appendChild(answerTitleTextDiv);
+    storyElem.appendChild(answerTitleTextDiv);
 
-    answerTextDiv = document.createElement('div')
+    var answerTextDiv = document.createElement('div')
     answerText = document.createElement('text-start');
     answerText.className = "mb-3";
     answerText.textContent = round[1];
     answerTextDiv.appendChild(answerText);
-    playRoundTile.appendChild(answerTextDiv);
+    storyElem.appendChild(answerTextDiv);
 
-    finalstorydiv.appendChild(playRoundTile);
+    finalstorydiv.appendChild(storyElem);
 
 }
 
@@ -392,7 +407,7 @@ async function generateFinalStory() {
         if (Array.isArray(final_story)) {
             for (var i = 0; i < final_story.length; i += 2)
             {
-                generatePlayRound(finalstorydiv, [final_story[i], final_story[i+1]])
+                generateFinalStoryElement(finalstorydiv, [final_story[i], final_story[i+1]], "Puzzle", "Answer")
             }
 
         } else {
@@ -400,6 +415,51 @@ async function generateFinalStory() {
         }
     } catch (error) {
         finalstorydiv.innerHTML = 'Error: ' + error.message;
+    }
+}
+
+async function startPlay() {
+    var playTraceDiv=document.getElementById("play-trace-div");
+    try {
+
+        // const response = await fetch(`${backendUrl}/generate_final_story`, {
+        //     method: 'POST',
+        //     headers: {
+        //         'Content-Type': 'application/json'
+        //     },
+        //     body: JSON.stringify(cluesToHide)
+        // });
+        // data = await response.json();
+        // var playTrace = data[`story`];
+        var playTrace = [
+            "Is it a bird?", "No",
+            "Is it a tree?", "No",
+            "Is it a plane?", "No",
+            "Is it a worm?", "Yes",
+        ]
+        console.log(playTrace);
+        // Check if options is a string and try to parse it
+        if (typeof playTrace === 'string') {
+            try {
+                playTrace = JSON.parse(playTrace);
+            } catch (e) {
+                console.error('Error parsing story and answer:', e);
+                return;
+            }
+        }
+        console.log(playTrace);
+
+        if (Array.isArray(playTrace)) {
+            for (var i = 0; i < playTrace.length; i += 2)
+            {
+                generateFinalStoryElement(playTraceDiv, [playTrace[i], playTrace[i+1]], "Question", "Answer")
+            }
+
+        } else {
+            console.error('Error: options is not an array');
+        }
+    } catch (error) {
+        playTraceDiv.innerHTML = 'Error: ' + error.message;
     }
 }
 
