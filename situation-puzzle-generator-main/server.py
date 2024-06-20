@@ -14,10 +14,11 @@ puzzles = ""
 final_story = ""
 game_history = []
 
-def generate_draft_story_message(time, place, character, death):
+def generate_draft_story_message(time, place, character, objectname):
     history = []
     messages = [
-        {"role": "user", "content": f"Please generate create a complete story suitable for designing a situation puzzle. The story should be whthin 50 words with the following information: At {time}, in {place}, {character} is found dead due to {death}. The story should have clear plot development and logical cause-and-effect relationships to facilitate the subsequent puzzle creation."}
+        {"role": "user",
+        "content": f"Please generate a complete short story of up to 50 words using the following keywords{time, place, character, objectname}. The story needs to have a complete narrative with cause and effect, as well as some non-daily factors."}
     ]
     history.append(messages[0])
     return messages, history
@@ -44,14 +45,14 @@ def generate_final_story_prompt_v0(info_to_hide, puzzles, history):
 def generate_final_story_prompt_v1(info_to_hide, story, history):
     messages = history.copy()
     messages.append({"role": "assistant", "content": f"{story}"})
-
-    messages.append({"role": "user", "content":
-        f"There is a complete story {story} and the information {info_to_hide} which need to be hide,"
-        "please design a situation puzzle based on these. The puzzle should be created by removing the selected ‘hidden information’"
-        "from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have \
-        a reasonable difficulty level and revolve around the hidden information. After creating the situation puzzle, \
+    messages.append(
+        {"role": "user", "content": f"There is a story and the information {info_to_hide} which need to be hide, \
+        please design a situation puzzle based on these. The puzzle should be created by removing the ‘hidden information’\
+         from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have \
+         a reasonable difficulty level and revolve around the hidden information. After creating the situation puzzle, \
          please provide the answer to the puzzle, which should consist of the hidden parts of the story. \
-         Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array. "})
+         Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array. "}
+    )
     print(messages)
     return messages
 
@@ -98,10 +99,10 @@ def get_options():
     if not query_type:
         return jsonify({'error': 'No query type provided'}), 400
     prompts = {
-        "time": "Provide 6 different times in an array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
-        "place": "Provide 6 different places in an array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
-        "character": "Provide 6 different characters in an array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
-        "weapon": "Provide 6 different weapons in an array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
+        "time": "Provide 6 different times, including various scales such as days, months, years, seasons, eras, or even abstract concepts related to time, in a json array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
+        "place": "Provide 6 different places, covering a wide range of places like cities, countries, continents, landmarks or even fictional locations, in a json array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
+        "character": "Provide 6 different characters, including diverse types even non-human creatures in a json array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
+        "object": "Provide 6 different objects, ranging from everyday items to unique, mysterious, or technologically advanced objects in a json array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
     }
     prompt = prompts.get(query_type)
     try:
