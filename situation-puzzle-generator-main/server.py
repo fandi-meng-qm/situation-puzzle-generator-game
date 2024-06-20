@@ -78,6 +78,7 @@ def draft_story():
 
 @app.route('/get_options', methods=['GET'])
 def get_options():
+    print("get_options")
     query_type = request.args.get('type')
     if not query_type:
         return jsonify({'error': 'No query type provided'}), 400
@@ -136,4 +137,4 @@ def generate_final_story():
         return jsonify({'error': f"General error: {e}"}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5010)
+    app.run(host='0.0.0.0', port=5010, debug=True)
