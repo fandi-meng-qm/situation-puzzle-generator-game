@@ -454,6 +454,7 @@ async function startPlay() {
             {
                 generateFinalStoryElement(playTraceDiv, [playTrace[i], playTrace[i+1]], "Question", "Answer")
             }
+            displayPlayResult(4); // TODO:
 
         } else {
             console.error('Error: options is not an array');
@@ -461,6 +462,16 @@ async function startPlay() {
     } catch (error) {
         playTraceDiv.innerHTML = 'Error: ' + error.message;
     }
+}
+
+function displayPlayResult(numberRounds)
+{
+    const playResultDiv = document.getElementById("play-result-div");
+    playResultDiv.style.display = "block";
+    const playResult = document.getElementById("play-result");
+    playResult.style.display = "block";
+    document.getElementById("play-result-num-rounds").textContent = numberRounds;
+    document.getElementById("play-result-score").textContent = numberRounds;
 }
 
 
