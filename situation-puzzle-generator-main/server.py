@@ -83,10 +83,17 @@ def get_options():
     if not query_type:
         return jsonify({'error': 'No query type provided'}), 400
     prompts = {
+<<<<<<< Updated upstream
         "time": "Provide 6 different times in an array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
         "place": "Provide 6 different places in an array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
         "character": "Provide 6 different characters in an array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
         "weapon": "Provide 6 different weapons in an array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
+=======
+        "time": "Provide 6 different times, including various scales such as days, months, years, seasons, eras, or even abstract concepts related to time, in a json array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
+        "place": "Provide 6 different places, covering a wide range of places like cities, countries, continents, landmarks or even fictional locations, in a json array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
+        "character": "Provide 6 different characters, including diverse roles, professions or even non-human creatures in a json array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
+        "object": "Provide 6 different objects, ranging from everyday items to unique, mysterious, or technologically advanced objects in a json array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
+>>>>>>> Stashed changes
     }
     prompt = prompts.get(query_type)
     try:
