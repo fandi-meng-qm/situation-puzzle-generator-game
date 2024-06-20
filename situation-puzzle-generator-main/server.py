@@ -16,7 +16,7 @@ final_story = ""
 def generate_draft_story_message(time, place, character, death):
     history = []
     messages = [
-        {"role": "user", "content": f"Please generate create a complete story suitable for designing a situation puzzle. The story should be whthin 20 words with the following information: At {time}, in {place}, {character} is found dead due to {death}. The story should have clear plot development and logical cause-and-effect relationships to facilitate the subsequent puzzle creation."}
+        {"role": "user", "content": f"Please generate create a complete story suitable for designing a situation puzzle. The story should be whthin 50 words with the following information: At {time}, in {place}, {character} is found dead due to {death}. The story should have clear plot development and logical cause-and-effect relationships to facilitate the subsequent puzzle creation."}
     ]
     history.append(messages[0])
     return messages, history
@@ -31,12 +31,26 @@ def generate_puzzle(story, history):
     history = messages.copy()
     return messages, history
 
-def generate_final_story_prompt(info_to_hide, puzzles, history):
+def generate_final_story_prompt_v0(info_to_hide, puzzles, history):
     messages = history.copy()
     messages.append({"role": "assistant", "content": f"{puzzles}"})
     messages.append(
         {"role": "user", "content": f"Rewrite the story. The puzzle should be created by removing the selected parts from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have a reasonable difficulty level and revolve around the hidden information. At the end of telling the story, propose a question that can be solved or explained by the hidden information. The information to be hidden are {info_to_hide}. Write the answer, which is the hidden information, in an answer narrative. Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array."}
     )
+    print(messages)
+    return messages
+
+def generate_final_story_prompt_v1(info_to_hide, story, history):
+    messages = history.copy()
+    messages.append({"role": "assistant", "content": f"{story}"})
+
+    messages.append({"role": "user", "content":
+        f"There is a complete story {story} and the information {info_to_hide} which need to be hide," 
+        "please design a situation puzzle based on these. The puzzle should be created by removing the selected ‘hidden information’"
+        "from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have \
+        a reasonable difficulty level and revolve around the hidden information. After creating the situation puzzle, \
+         please provide the answer to the puzzle, which should consist of the hidden parts of the story. \
+         Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array. "})
     print(messages)
     return messages
 
@@ -123,7 +137,7 @@ def generate_final_story():
     hiddeninfo = request.get_json()
     print(hiddeninfo)
     try:
-        messages = generate_final_story_prompt(hiddeninfo, draft_story_save, history)
+        messages = generate_final_story_prompt_v1(hiddeninfo, draft_story_save, history)
         print(messages)
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",

@@ -3,7 +3,7 @@ var BACKEND_URL = "https://situationpuzzlegenerator.azurewebsites.net";
 const backendUrl = 'http://127.0.0.1:5010';
 
 
-const initialMaxNumCluesToConceal = 3;
+const initialMaxNumCluesToConceal = 2;
 var maxNumCluesToConceal = initialMaxNumCluesToConceal;
 var numCluesToSelect = maxNumCluesToConceal;
 
@@ -27,7 +27,7 @@ const formConfig = [
 ];
 
 const answers = {};
-puzzles={};
+// puzzles={};
 draft_story="";
 final_story="";
 
@@ -101,6 +101,10 @@ function generateForm() {
     finalSubmitButton.style.display = 'none';
     finalSubmitButton.onclick = submitDraft;
     finalGenerateButtonDiv.appendChild(finalSubmitButton);
+
+
+    // TODO: remove
+    // generateFinalStory()
 }
 
 
@@ -270,6 +274,7 @@ async function submitDraft() {
         finalstorydiv=document.getElementById("final-story");
         finalstorydiv.textContent = JSON.stringify(cluesToHide);
         finalstorydiv.style.display = "block";
+        generateFinalStory();
     };
 }
 
@@ -318,9 +323,47 @@ async function submitDraft() {
 //     });
 // }
 
+function generatePlayRound(finalstorydiv, round)
+{
+    playRoundTile = document.createElement('div')
+    playRoundTile.className = "round-container";
+    playRoundTile.style = "margin-left: 10px"
+
+    storyTitleTextDiv = document.createElement('div')
+    storyTitleText = document.createElement('h1');
+    storyTitleText.className = "text-uppercase fs-4 mb-3 mt-2";
+    storyTitleText.textContent = "Puzzle:\n";
+    storyTitleTextDiv.appendChild(storyTitleText);
+    playRoundTile.appendChild(storyTitleTextDiv);
+
+    storyTextDiv = document.createElement('div')
+    storyText = document.createElement('text-start');
+    storyText.className = "mb-5";
+    storyText.textContent = round[0];
+    storyTextDiv.appendChild(storyText);
+    playRoundTile.appendChild(storyTextDiv);
+
+    answerTitleTextDiv = document.createElement('div')
+    answerTitleText = document.createElement('h1');
+    answerTitleText.className = "text-uppercase fs-4 mb-3 mt-5";
+    answerTitleText.textContent = "Answer:\n";
+    answerTitleTextDiv.appendChild(answerTitleText);
+    playRoundTile.appendChild(answerTitleTextDiv);
+
+    answerTextDiv = document.createElement('div')
+    answerText = document.createElement('text-start');
+    answerText.className = "mb-3";
+    answerText.textContent = round[1];
+    answerTextDiv.appendChild(answerText);
+    playRoundTile.appendChild(answerTextDiv);
+
+    finalstorydiv.appendChild(playRoundTile);
+
+}
+
 async function generateFinalStory() {
     // Placeholder function for final story generation
-    console.log('Generating final story with selected puzzles: ' + Object.keys(puzzles).join(', '));
+    console.log('Generating final story with selected clues to hide: ' + Object.keys(cluesToHide).join(', '));
     finalstorydiv=document.getElementById("final-story");
     finalstorydiv.style.removeProperty('display');
     finalstorydiv.innerHTML = "";
@@ -330,7 +373,7 @@ async function generateFinalStory() {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(puzzles)
+            body: JSON.stringify(cluesToHide)
         });
         data = await response.json();
         final_story = data[`story`];
@@ -344,37 +387,13 @@ async function generateFinalStory() {
                 return;
             }
         }
+        console.log(final_story);
 
         if (Array.isArray(final_story)) {
-
-
-            storyTitleTextDiv = document.createElement('div')
-            storyTitleText = document.createElement('h1');
-            storyTitleText.className = "text-uppercase fs-4 mb-3 mt-2";
-            storyTitleText.textContent = "Situation\n";
-            storyTitleTextDiv.appendChild(storyTitleText);
-            finalstorydiv.appendChild(storyTitleTextDiv);
-
-            storyTextDiv = document.createElement('div')
-            storyText = document.createElement('text-start');
-            storyText.className = "mb-5";
-            storyText.textContent = final_story[0];
-            storyTextDiv.appendChild(storyText);
-            finalstorydiv.appendChild(storyTextDiv);
-
-            answerTitleTextDiv = document.createElement('div')
-            answerTitleText = document.createElement('h1');
-            answerTitleText.className = "text-uppercase fs-4 mb-3 mt-5";
-            answerTitleText.textContent = "Answer\n";
-            answerTitleTextDiv.appendChild(answerTitleText);
-            finalstorydiv.appendChild(answerTitleTextDiv);
-
-            answerTextDiv = document.createElement('div')
-            answerText = document.createElement('text-start');
-            answerText.className = "mb-3";
-            answerText.textContent = final_story[1];
-            answerTextDiv.appendChild(answerText);
-            finalstorydiv.appendChild(answerTextDiv);
+            for (var i = 0; i < final_story.length; i += 2)
+            {
+                generatePlayRound(finalstorydiv, [final_story[i], final_story[i+1]])
+            }
 
         } else {
             console.error('Error: options is not an array');
@@ -383,5 +402,7 @@ async function generateFinalStory() {
         finalstorydiv.innerHTML = 'Error: ' + error.message;
     }
 }
+
+
 
 document.addEventListener('DOMContentLoaded', generateForm);
