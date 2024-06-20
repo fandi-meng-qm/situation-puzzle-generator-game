@@ -146,7 +146,7 @@ function regenerateOptions(section) {
         1: 'time',
         2: 'place',
         3: 'character',
-        4: 'weapon'
+        4: 'object'
     };
     const type = typeMapping[section];
     console.log("regenerateOPtions");

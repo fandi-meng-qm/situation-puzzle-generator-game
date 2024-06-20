@@ -12,45 +12,89 @@ history = []
 draft_story_save = ""
 puzzles = ""
 final_story = ""
+game_history = []
+n_question = 0
 
-def generate_draft_story_message(time, place, character, death):
+
+def generate_draft_story_message(time, place, character, object):
     history = []
     messages = [
-        {"role": "user", "content": f"Please generate create a complete story suitable for designing a situation puzzle. The story should be whthin 20 words with the following information: At {time}, in {place}, {character} is found dead due to {death}. The story should have clear plot development and logical cause-and-effect relationships to facilitate the subsequent puzzle creation."}
+        {"role": "user",
+         "content": f"Please generate a complete short story of up to 50 words using the following keywords{time, place, character, object}. The story needs to have a complete narrative with cause and effect, as well as some non-daily factors."}
     ]
     history.append(messages[0])
     return messages, history
 
-def generate_puzzle(story, history):
+
+def split_story(story, history):
     messages = history.copy()
     messages.append({"role": "assistant", "content": f"{story}"})
     messages.append(
-        {"role": "user", "content": f"Find five information puzzle informed or implied in the story or related to the natural, well-established traits of the time, place, character, or weapon that can be explain the cause-effect relationships. Return them in the following format without numerical numbering [\"sentence\",\"sentence\",\"sentence\",\"sentence\",\"sentence\"]"}
+        {"role": "user", "content": f"Please split the provided story text into fragmented segments, with each segment which is best to containing at least one piece of information related to 'Environment or scene details', 'Specific roles or identities', 'Time or sequence', 'Abnormal emotions or motivations', or 'Domain knowledge or common sense'. \
+        Return them in the following format without numerical numbering [\"segment\",\"segment\",\"segment\",\"segment\",\"segment\"]"}
     )
     print(messages)
     history = messages.copy()
     return messages, history
 
-def generate_final_story_prompt(info_to_hide, puzzles, history):
+
+def generate_final_puzzle(info_to_hide, story, history):
     messages = history.copy()
-    messages.append({"role": "assistant", "content": f"{puzzles}"})
+    messages.append({"role": "assistant", "content": f"{story}"})
     messages.append(
-        {"role": "user", "content": f"Rewrite the story. The puzzle should be created by removing the selected parts from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have a reasonable difficulty level and revolve around the hidden information. At the end of telling the story, propose a question that can be solved or explained by the hidden information. The information to be hidden are {info_to_hide}. Write the answer, which is the hidden information, in an answer narrative. Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array."}
+        {"role": "user", "content": f"There is a story and the information {info_to_hide} which need to be hide, \
+        please design a situation puzzle based on these. The puzzle should be created by removing the ‘hidden information’\
+         from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have \
+         a reasonable difficulty level and revolve around the hidden information. After creating the situation puzzle, \
+         please provide the answer to the puzzle, which should consist of the hidden parts of the story. \
+         Combine the story and the answer in an array like shown in the following example [\"The situation story\",\"The hidden information\"]. Return the array. "}
     )
     print(messages)
     return messages
 
-def generate_story_options(request):
-    messages = [
-        {"role": "user", "content": request}
-    ]
+
+def ai_game_play(puzzle, game_history):
+    global n_question
+    messages = game_history.copy()
+    messages.append({"role": "assistant", "content": f"Puzzle: {puzzle}, Game_history: {game_history}"})
+    messages.append(
+        {"role": "user", "content": f"There is a situation puzzle and please play it, the game host should give you yes or no answer\
+         for your question and you can do the reasoning based on the game history,\
+         it would be better if you can find out the truth in fewer steps. Now you can ask question like the example [\"Question\"], \
+         or if you already know the truth, you can just reply with the truth. Please return the array format. "}
+    )
+    print(messages)
+    n_question += 1
     return messages
+
+
+def ai_game_host(puzzle, answer, question):
+    messages = game_history.copy()
+    messages.append({"role": "assistant", "content": f"Puzzle:{puzzle}, Answer:{answer}, Player's question:{question}"})
+    messages.append(
+        {"role": "user",
+         "content": f"You are the host of a situation puzzle game. This is the puzzle and its answer, please based on \
+         this to answer ['yes'] or ['no'] to the player's question in an array format. And if the player's question is \
+         the truth roughly match the puzzle answer, please respond ['solved']"}
+    )
+    print(messages)
+    return messages
+
+
+
+
+# def generate_story_options(request):
+#     messages = [
+#         {"role": "user", "content": request}
+#     ]
+#     return messages
 
 @app.route('/')
 def index():
     backend_url = os.getenv('BACKEND_URL')
     return render_template('index.html', backend_url=backend_url)
- 
+
+
 @app.route('/generate_draft_story', methods=['POST'])
 def draft_story():
     global draft_story_save, history
@@ -76,6 +120,7 @@ def draft_story():
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500
 
+
 @app.route('/get_options', methods=['GET'])
 def get_options():
     print("get_options")
@@ -83,17 +128,10 @@ def get_options():
     if not query_type:
         return jsonify({'error': 'No query type provided'}), 400
     prompts = {
-<<<<<<< Updated upstream
-        "time": "Provide 6 different times in an array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
-        "place": "Provide 6 different places in an array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
-        "character": "Provide 6 different characters in an array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
-        "weapon": "Provide 6 different weapons in an array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
-=======
         "time": "Provide 6 different times, including various scales such as days, months, years, seasons, eras, or even abstract concepts related to time, in a json array format, for example, [\"Evening\", \"May\", \"Night\", \"1999\", \"Morning\", \"Monday\"]",
         "place": "Provide 6 different places, covering a wide range of places like cities, countries, continents, landmarks or even fictional locations, in a json array format, for example, [\"Paris\", \"New York\", \"Tokyo\", \"Beach\", \"Mountain\", \"Desert\"]",
-        "character": "Provide 6 different characters, including diverse roles, professions or even non-human creatures in a json array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
+        "character": "Provide 6 different characters, including diverse types even non-human creatures in a json array format, for example, [\"Hero\", \"Villain\", \"Sidekick\", \"Mentor\", \"Monster\", \"Princess\"]",
         "object": "Provide 6 different objects, ranging from everyday items to unique, mysterious, or technologically advanced objects in a json array format, for example, [\"Gun\", \"Wound\", \"Weapon\", \"Scissors\", \"Shoes\", \"Fruit\"]"
->>>>>>> Stashed changes
     }
     prompt = prompts.get(query_type)
     try:
@@ -107,6 +145,7 @@ def get_options():
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500
+
 
 @app.route('/get_puzzle_options', methods=['GET'])
 def get_puzzle_options():
@@ -123,6 +162,7 @@ def get_puzzle_options():
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500
+
 
 @app.route('/generate_final_story', methods=['POST'])
 def generate_final_story():
@@ -142,6 +182,7 @@ def generate_final_story():
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5010, debug=True)
