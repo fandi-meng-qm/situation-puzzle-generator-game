@@ -1,8 +1,10 @@
 var BACKEND_URL = "https://situationpuzzlegenerator.azurewebsites.net";
 // const backendUrl = BACKEND_URL || 'http://127.0.0.1:5000';
-const backendUrl = 'http://127.0.0.1:5000';
+const backendUrl = 'http://127.0.0.1:5010';
 
 
+const maxNumCluesToConceal = 3;
+var numCluesToSelect = 3;
 
 const formConfig = [
     {
@@ -27,17 +29,19 @@ const answers = {};
 puzzles={};
 draft_story="";
 final_story="";
+
+var cluesToHide = {};
 function generateForm() {
     const formContainer = document.getElementById('form');
     formConfig.forEach((section, index) => {
         sectionDiv = document.createElement('div');
         sectionDiv.id = `section${index + 1}`;
         sectionDiv.className = 'form-container';
-        
+
         if (index !== 0) {
             sectionDiv.style.display = 'none';
         }
-        
+
         const rowDiv = document.createElement('div');
         rowDiv.className = 'row align-items-center';
 
@@ -48,7 +52,7 @@ function generateForm() {
         questionDiv.className = 'question fs-4';
         questionDiv.textContent = section.question;
         sectionDiv.appendChild(questionDiv);
-        
+
         buttonGroup = document.createElement('div');
         buttonGroup.className = 'button-group';
         section.options.forEach(option => {
@@ -60,7 +64,7 @@ function generateForm() {
         });
 
         buttonGroupCol.appendChild(buttonGroup);
-        
+
         const regenerateButtonCol = document.createElement('div');
         regenerateButtonCol.className = 'col-4 text-end';
 
@@ -77,6 +81,7 @@ function generateForm() {
 
         formContainer.appendChild(sectionDiv);
     });
+    // Generate story draft button
     const generateButtonDiv = document.getElementById("generate-button")
     const submitButton = document.createElement('button');
     submitButton.className = 'submit-button';
@@ -85,6 +90,16 @@ function generateForm() {
     submitButton.style.display = 'none';
     submitButton.onclick = submitForm;
     generateButtonDiv.appendChild(submitButton);
+
+    // Final generate button
+    const finalGenerateButtonDiv = document.getElementById("final-generate-button")
+    const finalSubmitButton = document.createElement('button');
+    finalSubmitButton.className = 'submit-button';
+    finalSubmitButton.id="final-submit-button";
+    finalSubmitButton.textContent = 'Generate Final Story';
+    finalSubmitButton.style.display = 'none';
+    finalSubmitButton.onclick = submitDraft;
+    finalGenerateButtonDiv.appendChild(finalSubmitButton);
 }
 
 
@@ -93,13 +108,17 @@ function selectAnswer(section, answer) {
     const currentSection = document.getElementById('section' + section);
     currentSection.classList.add('active');
     updateButtonSelection(section, answer);
-    
+
     const nextSection = document.getElementById('section' + (section + 1));
     if (nextSection) {
         nextSection.style.removeProperty('display');
     } else {
         document.getElementById("submit-button").style.display = 'block';
     }
+}
+
+function revealFinalGenerateButton() {
+    document.getElementById("final-submit-button").style.display = 'block';
 }
 
 function validateInput(section, input) {
@@ -129,6 +148,7 @@ function regenerateOptions(section) {
         4: 'weapon'
     };
     const type = typeMapping[section];
+    console.log("regenerateOPtions");
 
     fetch(`${backendUrl}/get_options?type=${type}`)
         .then(response => response.json())
@@ -167,6 +187,8 @@ async function submitForm() {
     const responseDiv = document.getElementById('response');
     responseDiv.style.removeProperty('display');
     responseDiv.innerHTML = 'Loading...';
+    numCluesToSelect = maxNumCluesToConceal;
+    revealFinalGenerateButton();
     try {
         const response = await fetch(`${backendUrl}/generate_draft_story`, {
             method: 'POST',
@@ -176,80 +198,120 @@ async function submitForm() {
             body: JSON.stringify(answers)
         });
         const data = await response.json();
+        // data = "In 1999, in a remote car park, a popular reality TV show contestant known as \"Sidekick\" was found dead. The cause of death was determined to be a mysterious wound that appeared to have been inflicted with a sharp object. Despite there being no witnesses to the crime, the police began to investigate the other contestants on the show, as tensions had been running high among the competitors. As they delved deeper into the lives of the contestants, they uncovered a web of jealousy, rivalry, and betrayal that ultimately led to the shocking murder of \"Sidekick.\" Through careful examination of the evidence left behind at the scene, the police were able to piece together the sequence of events that had led to the tragic death of the reality TV star."
         responseDiv.innerHTML = "";
         storyTitleDiv = document.createElement('div');
         storyTitleDiv.className = 'question fs-4';
         storyTitleDiv.textContent = "Situation Story Draft";
         responseDiv.appendChild(storyTitleDiv);
+        console.log(data)
 
         // Split the text into sentences
         let sentences = data.answer.split(/[.!?]+/);
+        // let sentences = data.split(/[.!?]+/);
 
-        // Call generatePuzzleQuestion with sentences
-        generatePuzzleQuestion(sentences);
-
-        // Iterate over the sentences
+        storyDraft = document.createElement('p');
+        storyDraft.className = "button-group"
         sentences.forEach((sentence) => {
-            let sentenceDiv = document.createElement('div');
-            sentenceDiv.textContent = sentence;
-            sentenceDiv.style.cursor = "pointer";
-            sentenceDiv.addEventListener('click', () => {
-                generatePuzzleQuestion(sentence);
-                sentenceDiv.style.color = "red"; // Change the color to red on click
-            });
-            responseDiv.appendChild(sentenceDiv);
+            if(sentence.trim() !== '') {
+                sentence = sentence.trim()
+                sentence += "." // TODO: add original punctuation
+
+                let buttonSpan = document.createElement('span');
+                buttonSpan.textContent = sentence;
+                buttonSpan.className = "draft";
+                buttonSpan.addEventListener('click', () => {
+                    console.log(buttonSpan.style.backgroundColor)
+                    if (buttonSpan.getAttribute("data-state") == "selected") {
+                            buttonSpan.className = "draft";
+                            numCluesToSelect += 1;
+                            buttonSpan.setAttribute("data-state", "unselected");
+                            delete cluesToHide[buttonSpan.textContent];
+                    }
+                    else {
+                        if (numCluesToSelect > 0) {
+                            buttonSpan.className = "draft_selected";
+                            numCluesToSelect -= 1;
+                            buttonSpan.setAttribute("data-state", "selected");
+                            cluesToHide[buttonSpan.textContent] = true;
+                        }
+                        else {
+                            console.log("numCluesExceeded");
+                        }
+                    }
+                    console.log("numClues: " + numCluesToSelect);
+                });
+                storyDraft.appendChild(buttonSpan);
+            }
         });
 
-        draft_story = data.answer;
+        responseDiv.appendChild(storyDraft);
+
+        // draft_story = data.answer;
+        draft_story = data;
     } catch (error) {
         responseDiv.innerHTML = 'Error: ' + error.message;
     }
 }
 
-async function generatePuzzleQuestion(sentences) {
-    const puzzleDiv = document.getElementById('puzzle-form');
-    puzzleDiv.style.removeProperty('display');
-    puzzleDiv.innerHTML = '';
-    
-    sentences.forEach((sentence) => {
-        if(sentence.trim() !== '') {
-            let button = document.createElement('button');
-            button.className = "btn btn-outline-primary mb-2 mt-2";
-            button.textContent = sentence.trim(); // Set the sentence as the button text
-            button.onclick = () => selectPuzzleAnswer(sentence);
-            puzzleDiv.appendChild(button);
-        }
-    });
+/**
+ * Submit draft (for final story)
+ */
+async function submitDraft() {
+    console.log("submitDraft")
+    if (numCluesToSelect == 0) {
+        // TODO: submit
+        console.log(cluesToHide)
+        finalstorydiv=document.getElementById("final-story");
+        finalstorydiv.textContent = JSON.stringify(cluesToHide);
+        finalstorydiv.style.display = "block";
+    };
 }
 
-function selectPuzzleAnswer(answer) {
-    if (!puzzles[answer]) {
-        puzzles[answer] = true;
-    } else {
-        delete puzzles[answer];
-    }
-    updatePuzzleButtonSelection();
-    const puzzleCount = Object.keys(puzzles).length;
-    const confirmButton = document.getElementById('confirm-button');
-    if (puzzleCount > 0 && puzzleCount < 5) {
-        confirmButton.style.removeProperty('display');
-    } else {
-        confirmButton.style.display = 'none';
-    }
-}
+// async function generatePuzzleQuestion(sentences) {
+//     const puzzleDiv = document.getElementById('puzzle-form');
+//     puzzleDiv.style.removeProperty('display');
+//     puzzleDiv.innerHTML = '';
 
-function updatePuzzleButtonSelection() {
-    const puzzlebuttons = document.querySelectorAll('#puzzle-form button');
-    puzzlebuttons.forEach(button => {
-        if (puzzles[button.textContent]) {
-            button.classList.remove('btn-outline-primary');
-            button.classList.add('btn-primary');
-        } else {
-            button.classList.remove('btn-primary');
-            button.classList.add('btn-outline-primary');
-        }
-    });
-}
+//     sentences.forEach((sentence) => {
+//         if(sentence.trim() !== '') {
+//             let button = document.createElement('button');
+//             button.className = "btn btn-outline-primary mb-2 mt-2";
+//             button.textContent = sentence.trim(); // Set the sentence as the button text
+//             button.onclick = () => selectPuzzleAnswer(sentence);
+//             puzzleDiv.appendChild(button);
+//         }
+//     });
+// }
+
+// function selectPuzzleAnswer(answer) {
+//     if (!puzzles[answer]) {
+//         puzzles[answer] = true;
+//     } else {
+//         delete puzzles[answer];
+//     }
+//     updatePuzzleButtonSelection();
+//     const puzzleCount = Object.keys(puzzles).length;
+//     const confirmButton = document.getElementById('confirm-button');
+//     if (puzzleCount > 0 && puzzleCount < 5) {
+//         confirmButton.style.removeProperty('display');
+//     } else {
+//         confirmButton.style.display = 'none';
+//     }
+// }
+
+// function updatePuzzleButtonSelection() {
+//     const puzzlebuttons = document.querySelectorAll('#puzzle-form button');
+//     puzzlebuttons.forEach(button => {
+//         if (puzzles[button.textContent]) {
+//             button.classList.remove('btn-outline-primary');
+//             button.classList.add('btn-primary');
+//         } else {
+//             button.classList.remove('btn-primary');
+//             button.classList.add('btn-outline-primary');
+//         }
+//     });
+// }
 
 async function generateFinalStory() {
     // Placeholder function for final story generation
