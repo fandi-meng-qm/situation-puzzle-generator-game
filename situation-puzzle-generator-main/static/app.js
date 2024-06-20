@@ -29,7 +29,13 @@ const formConfig = [
 const answers = {};
 // puzzles={};
 draft_story="";
-final_story="";
+// final_story=[]; // A pair <puzzle, answer>
+final_puzzle="";
+final_answer="";
+next_question="";
+
+const maxNumQuestions = 5;
+var numQuestionsLeft = maxNumQuestions;
 
 var cluesToHide = {};
 function generateForm() {
@@ -111,6 +117,12 @@ function generateForm() {
     playButton.style.display = 'none';
     playButton.onclick = startPlay;
     playButtonDiv.appendChild(playButton);
+
+
+    // Restart button
+    const restartButton = document.getElementById("restart-button")
+    restartButton.onclick = () => {location.reload();};
+
 
 
     // TODO: remove
@@ -376,6 +388,29 @@ function generateFinalStoryElement(finalstorydiv, round, callText, responseText)
 
 }
 
+function generateQAElement(playTraceDiv, data, label)
+{
+    var storyElem = document.createElement('div')
+    storyElem.className = "round-container";
+    storyElem.style = "margin-left: 10px"
+
+    var storyTitleTextDiv = document.createElement('div')
+    storyTitleText = document.createElement('h1');
+    storyTitleText.className = "text-uppercase fs-4 mb-3 mt-2";
+    storyTitleText.textContent = label + ":\n";
+    storyTitleTextDiv.appendChild(storyTitleText);
+    storyElem.appendChild(storyTitleTextDiv);
+
+    var storyTextDiv = document.createElement('div')
+    storyText = document.createElement('text-start');
+    storyText.className = "mb-5";
+    storyText.textContent = data;
+    storyTextDiv.appendChild(storyText);
+    storyElem.appendChild(storyTextDiv);
+
+    playTraceDiv.appendChild(storyElem);
+}
+
 async function generateFinalStory() {
     // Placeholder function for final story generation
     console.log('Generating final story with selected clues to hide: ' + Object.keys(cluesToHide).join(', '));
@@ -405,10 +440,10 @@ async function generateFinalStory() {
         console.log(final_story);
 
         if (Array.isArray(final_story)) {
-            for (var i = 0; i < final_story.length; i += 2)
-            {
-                generateFinalStoryElement(finalstorydiv, [final_story[i], final_story[i+1]], "Puzzle", "Answer")
-            }
+            console.assert(final_story.length == 2);
+            final_puzzle = final_story[0];
+            final_answer = final_story[1];
+            generateFinalStoryElement(finalstorydiv, [final_puzzle, final_answer], "Puzzle", "Answer")
 
         } else {
             console.error('Error: options is not an array');
@@ -420,42 +455,97 @@ async function generateFinalStory() {
 
 async function startPlay() {
     var playTraceDiv=document.getElementById("play-trace-div");
-    try {
+    playTraceDiv.textContent = "";
+    numQuestionsLeft = maxNumQuestions;
 
-        // const response = await fetch(`${backendUrl}/generate_final_story`, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json'
-        //     },
-        //     body: JSON.stringify(cluesToHide)
-        // });
-        // data = await response.json();
-        // var playTrace = data[`story`];
-        var playTrace = [
-            "Is it a bird?", "No",
-            "Is it a tree?", "No",
-            "Is it a plane?", "No",
-            "Is it a worm?", "Yes",
-        ]
-        console.log(playTrace);
+    getAIPlayerQuestion();
+}
+
+async function getAIPlayerQuestion() {
+    var playTraceDiv=document.getElementById("play-trace-div");
+    if (numQuestionsLeft == 0)
+    {
+        return;
+    }
+    try {
+        const response = await fetch(`${backendUrl}/ai_game_play`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(final_puzzle)
+        });
+        data = await response.json();
+        next_question = data[`question`];
+        // var next_question [
+        //     "Is it a bird?", "No",
+        //     "Is it a tree?", "No",
+        //     "Is it a plane?", "No",
+        //     "Is it a worm?", "Yes",
+        // ]
+        console.log(next_question);
         // Check if options is a string and try to parse it
-        if (typeof playTrace === 'string') {
+        if (typeof next_question === 'string') {
             try {
-                playTrace = JSON.parse(playTrace);
+                next_question = JSON.parse(next_question);
             } catch (e) {
                 console.error('Error parsing story and answer:', e);
                 return;
             }
         }
-        console.log(playTrace);
+        console.log(next_question);
 
-        if (Array.isArray(playTrace)) {
-            for (var i = 0; i < playTrace.length; i += 2)
-            {
-                generateFinalStoryElement(playTraceDiv, [playTrace[i], playTrace[i+1]], "Question", "Answer")
+        if (Array.isArray(next_question)) {
+            next_question = next_question[0]
+            generateQAElement(playTraceDiv, next_question, "Question");
+            getAIHostAnswer();
+        } else {
+            console.error('Error: options is not an array');
+        }
+    } catch (error) {
+        playTraceDiv.innerHTML = 'Error: ' + error.message;
+    }
+}
+
+async function getAIHostAnswer() {
+    console.assert(typeof next_question === "string")
+    var playTraceDiv=document.getElementById("play-trace-div");
+    if (numQuestionsLeft == 0)
+    {
+        return;
+    }
+    try {
+        const response = await fetch(`${backendUrl}/ai_game_host`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({"puzzle": final_puzzle, "true_answer": final_answer,  "question": next_question})
+        });
+        data = await response.json();
+        var answer = data[`answer`];
+        // var answer = [
+        //     "Is it a bird?", "No",
+        //     "Is it a tree?", "No",
+        //     "Is it a plane?", "No",
+        //     "Is it a worm?", "Yes",
+        // ]
+        console.log(answer);
+        // Check if options is a string and try to parse it
+        if (typeof answer === 'string') {
+            try {
+                answer = JSON.parse(answer);
+            } catch (e) {
+                console.error('Error parsing story and answer:', e);
+                return;
             }
-            displayPlayResult(4); // TODO:
+        }
+        console.log(answer);
 
+        if (Array.isArray(answer)) {
+            generateQAElement(playTraceDiv, answer[0], "Answer");
+            numQuestionsLeft -= 1;
+            getAIPlayerQuestion();
         } else {
             console.error('Error: options is not an array');
         }

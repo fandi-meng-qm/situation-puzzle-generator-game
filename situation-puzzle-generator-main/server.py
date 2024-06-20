@@ -12,6 +12,7 @@ history = []
 draft_story_save = ""
 puzzles = ""
 final_story = ""
+game_history = []
 
 def generate_draft_story_message(time, place, character, death):
     history = []
@@ -45,7 +46,7 @@ def generate_final_story_prompt_v1(info_to_hide, story, history):
     messages.append({"role": "assistant", "content": f"{story}"})
 
     messages.append({"role": "user", "content":
-        f"There is a complete story {story} and the information {info_to_hide} which need to be hide," 
+        f"There is a complete story {story} and the information {info_to_hide} which need to be hide,"
         "please design a situation puzzle based on these. The puzzle should be created by removing the selected ‘hidden information’"
         "from the complete story and rephrasing it as a coherent narrative with missing information. The puzzle should have \
         a reasonable difficulty level and revolve around the hidden information. After creating the situation puzzle, \
@@ -64,7 +65,7 @@ def generate_story_options(request):
 def index():
     backend_url = os.getenv('BACKEND_URL')
     return render_template('index.html', backend_url=backend_url)
- 
+
 @app.route('/generate_draft_story', methods=['POST'])
 def draft_story():
     global draft_story_save, history
@@ -146,6 +147,74 @@ def generate_final_story():
         answer = response.choices[0].message.content
         print(response.choices[0].message.content)
         return jsonify({'story': answer})
+    except Exception as e:
+        print(f"General error: {e}")
+        return jsonify({'error': f"General error: {e}"}), 500
+
+def generate_ai_game_play(puzzle, game_history):
+    # global n_question
+    messages = game_history.copy()
+    messages.append({"role": "assistant", "content": f"Puzzle: {puzzle}, Game_history: {game_history}"})
+    messages.append(
+        {"role": "user", "content": f"There is a situation puzzle and please play it, the game host should give you yes or no answer\
+         for your question and you can do the reasoning based on the game history,\
+         it would be better if you can find out the truth in fewer steps. Now you can ask question like the example [\"Question\"], \
+         or if you already know the truth, you can just reply with the truth. Please return the array format. "}
+    )
+    print(messages)
+    # n_question += 1
+    return messages
+
+@app.route('/ai_game_play', methods=['POST'])
+def ai_game_play():
+    global draft_story_save, history
+    puzzle = request.get_json()
+    print(puzzle)
+    try:
+        messages = generate_ai_game_play(puzzle, game_history)
+        print(messages)
+        # response = client.chat.completions.create(
+        #     model="gpt-3.5-turbo",
+        #     messages=messages
+        # )
+        # answer = response.choices[0].message.content
+        # print(response.choices[0].message.content)
+        return jsonify({'question': ["Is it a bird?"]})
+    except Exception as e:
+        print(f"General error: {e}")
+        return jsonify({'error': f"General error: {e}"}), 500
+
+
+def generate_ai_game_host(puzzle, true_answer, question):
+    messages = game_history.copy()
+    messages.append({"role": "assistant", "content": f"Puzzle:{puzzle}, Answer:{true_answer}, Player's question:{question}"})
+    messages.append(
+        {"role": "user",
+         "content": f"You are the host of a situation puzzle game. This is the puzzle and its answer, please based on \
+         this to answer ['yes'] or ['no'] to the player's question in an array format. And if the player's question is \
+         the truth roughly match the puzzle answer, please respond ['solved']"}
+    )
+    print(messages)
+    return messages
+
+@app.route('/ai_game_host', methods=['POST'])
+def ai_game_host():
+    global draft_story_save, history
+    data = request.get_json()
+    print(data)
+    puzzle = data["puzzle"]
+    true_answer = data["true_answer"]
+    question = data["question"]
+    try:
+        messages = generate_ai_game_host(puzzle, true_answer, question)
+        print(messages)
+        # response = client.chat.completions.create(
+        #     model="gpt-3.5-turbo",
+        #     messages=messages
+        # )
+        # answer = response.choices[0].message.content
+        # print(response.choices[0].message.content)
+        return jsonify({'answer': ["Yes"]}) # TODO:
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500
