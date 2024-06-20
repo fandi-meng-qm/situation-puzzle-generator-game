@@ -3,8 +3,9 @@ var BACKEND_URL = "https://situationpuzzlegenerator.azurewebsites.net";
 const backendUrl = 'http://127.0.0.1:5010';
 
 
-const maxNumCluesToConceal = 3;
-var numCluesToSelect = 3;
+const initialMaxNumCluesToConceal = 3;
+var maxNumCluesToConceal = initialMaxNumCluesToConceal;
+var numCluesToSelect = maxNumCluesToConceal;
 
 const formConfig = [
     {
@@ -187,7 +188,6 @@ async function submitForm() {
     const responseDiv = document.getElementById('response');
     responseDiv.style.removeProperty('display');
     responseDiv.innerHTML = 'Loading...';
-    numCluesToSelect = maxNumCluesToConceal;
     revealFinalGenerateButton();
     try {
         const response = await fetch(`${backendUrl}/generate_draft_story`, {
@@ -199,16 +199,22 @@ async function submitForm() {
         });
         const data = await response.json();
         // data = "In 1999, in a remote car park, a popular reality TV show contestant known as \"Sidekick\" was found dead. The cause of death was determined to be a mysterious wound that appeared to have been inflicted with a sharp object. Despite there being no witnesses to the crime, the police began to investigate the other contestants on the show, as tensions had been running high among the competitors. As they delved deeper into the lives of the contestants, they uncovered a web of jealousy, rivalry, and betrayal that ultimately led to the shocking murder of \"Sidekick.\" Through careful examination of the evidence left behind at the scene, the police were able to piece together the sequence of events that had led to the tragic death of the reality TV star."
+        console.log(data)
+        // Split the text into sentences
+        let sentences = data.answer.split(/[.!?]+/).filter(i => i); // Remove empty
+        // let sentences = data.split(/[.!?]+/);
+        maxNumCluesToConceal = Math.min(initialMaxNumCluesToConceal, sentences.length)
+        sentences.forEach((sentence) => {
+        console.log("Sentence " + sentence)
+        }
+        )
+        console.log("Sentence length" + sentences.length)
+        numCluesToSelect = maxNumCluesToConceal;
         responseDiv.innerHTML = "";
         storyTitleDiv = document.createElement('div');
         storyTitleDiv.className = 'question fs-4';
-        storyTitleDiv.textContent = "Situation Story Draft";
+        storyTitleDiv.textContent = "Situation Story Draft. Max number of clues to hide: " + maxNumCluesToConceal;
         responseDiv.appendChild(storyTitleDiv);
-        console.log(data)
-
-        // Split the text into sentences
-        let sentences = data.answer.split(/[.!?]+/);
-        // let sentences = data.split(/[.!?]+/);
 
         storyDraft = document.createElement('p');
         storyDraft.className = "button-group"
@@ -247,8 +253,7 @@ async function submitForm() {
 
         responseDiv.appendChild(storyDraft);
 
-        // draft_story = data.answer;
-        draft_story = data;
+        draft_story = data.answer;
     } catch (error) {
         responseDiv.innerHTML = 'Error: ' + error.message;
     }
