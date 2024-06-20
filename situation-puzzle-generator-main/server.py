@@ -18,7 +18,14 @@ def generate_draft_story_message(time, place, character, objectname):
     history = []
     messages = [
         {"role": "user",
-        "content": f"Please generate a complete short story of up to 50 words using the following keywords{time, place, character, objectname}. The story needs to have a complete narrative with cause and effect, as well as some non-daily factors."}
+        # "content": f"Please generate a complete short story of up to 50 words using the following keywords: {time, place, character, objectname}. The story needs to have a complete narrative with cause and effect, as well as some non-daily factors."}
+        "content": 
+        f"""I'm writing some situation puzzles / minute mysteries / lateral thinking puzzles, and I need some ideas.
+A situation puzzle is a short mystery story with a 
+Can you generate a complete narrative within 80 words that can be turned into a situation puzzle.
+Then I'll choose which parts of the narrative I want to hide, so that it can be later turned into a puzzle.
+Please include the following keywords in your narrative: {time, place, character, objectname}.
+"""}
     ]
     history.append(messages[0])
     return messages, history
@@ -81,7 +88,8 @@ def draft_story():
     try:
         messages, history = generate_draft_story_message(time_data, place_data, character_data, reason_data)
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            # model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages
         )
         answer = response.choices[0].message.content
@@ -107,7 +115,8 @@ def get_options():
     prompt = prompts.get(query_type)
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            # model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=generate_story_options(prompt)
         )
         answer = response.choices[0].message.content
@@ -142,7 +151,7 @@ def generate_final_story():
         messages = generate_final_story_prompt_v1(hiddeninfo, draft_story_save, history)
         print(messages)
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages
         )
         answer = response.choices[0].message.content

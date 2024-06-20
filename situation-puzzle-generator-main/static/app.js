@@ -454,7 +454,7 @@ async function generateFinalStory() {
             try {
                 final_story = JSON.parse(final_story);
             } catch (e) {
-                console.error('Error parsing story and answer:', e);
+                console.error(`Error parsing story ${final_story} and answer:`, e);
                 return;
             }
         }
