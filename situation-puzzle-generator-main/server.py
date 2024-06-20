@@ -199,7 +199,6 @@ def generate_ai_game_host(puzzle, true_answer, question):
 
 @app.route('/ai_game_host', methods=['POST'])
 def ai_game_host():
-    global draft_story_save, history
     data = request.get_json()
     print(data)
     puzzle = data["puzzle"]
@@ -215,6 +214,40 @@ def ai_game_host():
         # answer = response.choices[0].message.content
         # print(response.choices[0].message.content)
         return jsonify({'answer': ["Yes"]}) # TODO:
+    except Exception as e:
+        print(f"General error: {e}")
+        return jsonify({'error': f"General error: {e}"}), 500
+
+
+def generate_split_story(story, history):
+    messages = history.copy()
+    messages.append({"role": "assistant", "content": f"{story}"})
+    messages.append(
+        {"role": "user", "content":
+        f"Please split the provided story text into fragmented segments, with each segment containing at least one piece of information related to 'Environment or scene details', 'Specific roles or identities', 'Time or sequence', 'Abnormal emotions or motivations', or 'Domain knowledge or common sense'. \
+        Return them in a json list like [\"segment 1\",\"segment 2\", ...] \
+        Here's the story: {story}."}
+    )
+    print(messages)
+    history = messages.copy()
+    return messages, history
+
+@app.route('/split_story', methods=['POST'])
+def split_story():
+    global history
+    data = request.get_json()
+    print(data)
+    story = data["story"]
+    try:
+        messages, history = generate_split_story(story, history)
+        print(messages)
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages
+        )
+        answer = response.choices[0].message.content
+        print(response.choices[0].message.content)
+        return jsonify({'split_story_segments': answer})
     except Exception as e:
         print(f"General error: {e}")
         return jsonify({'error': f"General error: {e}"}), 500

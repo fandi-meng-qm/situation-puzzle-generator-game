@@ -213,6 +213,19 @@ function regenerateOptions(section) {
         .catch(error => console.error('Error:', error));
 }
 
+async function splitDraftStory(draftStory)
+{
+    const response = await fetch(`${backendUrl}/split_story`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({"story": draftStory})
+    });
+    const data = await response.json();
+    return data["split_story_segments"];
+}
+
 async function submitForm() {
     console.log(JSON.stringify(answers));
     const responseDiv = document.getElementById('response');
@@ -231,7 +244,17 @@ async function submitForm() {
         // data = "In 1999, in a remote car park, a popular reality TV show contestant known as \"Sidekick\" was found dead. The cause of death was determined to be a mysterious wound that appeared to have been inflicted with a sharp object. Despite there being no witnesses to the crime, the police began to investigate the other contestants on the show, as tensions had been running high among the competitors. As they delved deeper into the lives of the contestants, they uncovered a web of jealousy, rivalry, and betrayal that ultimately led to the shocking murder of \"Sidekick.\" Through careful examination of the evidence left behind at the scene, the police were able to piece together the sequence of events that had led to the tragic death of the reality TV star."
         console.log(data)
         // Split the text into sentences
-        let sentences = data.answer.split(/[.!?]+/).filter(i => i); // Remove empty
+        // let sentences = data.answer.split(/[.!?]+/).filter(i => i); // Remove empty
+        let sentences = await splitDraftStory(data.answer)
+        // Check if options is a string and try to parse it
+        if (typeof sentences === 'string') {
+            try {
+                sentences = JSON.parse(sentences);
+            } catch (e) {
+                console.error('Error parsing story and answer:', e);
+                return;
+            }
+        }
         // let sentences = data.split(/[.!?]+/);
         maxNumCluesToConceal = Math.min(initialMaxNumCluesToConceal, sentences.length)
         sentences.forEach((sentence) => {
@@ -251,8 +274,6 @@ async function submitForm() {
         sentences.forEach((sentence) => {
             if(sentence.trim() !== '') {
                 sentence = sentence.trim()
-                sentence += "." // TODO: add original punctuation
-
                 let buttonSpan = document.createElement('span');
                 buttonSpan.textContent = sentence;
                 buttonSpan.className = "draft";
