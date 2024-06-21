@@ -28,7 +28,7 @@ def generate_draft_story_message(time, place, character, objectname):
 # Then I'll choose which parts hidden information I want to hide, so that it can be later turned into a puzzle.
 # Please include the following keywords in your narrative: {time, place, character, objectname}.
 # """
-        f"Please generate a mystery short story of up to 60 words using the following keywords: {time, place, character, objectname}. \
+        f"Please generate a mystery short story of up to 60 words in simple English using the following keywords: {time, place, character, objectname}. \
           The story needs to have at least 1 major believable twist. Make sure the story includes all the causes for the twist."
 #         f"""Can you write me a short situation puzzle up to 80 words, complete with the answer?
 # A situation puzzle is often referred to as minute mysteries, lateral thinking puzzles or "yes/no" puzzles.

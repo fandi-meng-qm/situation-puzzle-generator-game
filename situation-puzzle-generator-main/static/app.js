@@ -34,6 +34,8 @@ final_puzzle="";
 final_answer="";
 next_question="";
 
+const winningAnswer = "right"; // How do we consider the game is won -> when host AI replies "right"
+
 const maxNumQuestions = 5;
 var numQuestionsLeft = maxNumQuestions;
 
@@ -93,7 +95,7 @@ function generateForm() {
     const submitButton = document.createElement('button');
     submitButton.className = 'submit-button';
     submitButton.id="submit-button";
-    submitButton.textContent = 'Generate';
+    submitButton.textContent = 'Give me a draft idea';
     submitButton.style.display = 'none';
     submitButton.onclick = submitForm;
     generateButtonDiv.appendChild(submitButton);
@@ -103,7 +105,7 @@ function generateForm() {
     const finalSubmitButton = document.createElement('button');
     finalSubmitButton.className = 'submit-button';
     finalSubmitButton.id="final-submit-button";
-    finalSubmitButton.textContent = 'Generate Final Story';
+    finalSubmitButton.textContent = 'Generate a Puzzle from this!';
     finalSubmitButton.style.display = 'none';
     finalSubmitButton.onclick = submitDraft;
     finalGenerateButtonDiv.appendChild(finalSubmitButton);
@@ -396,7 +398,7 @@ function generateFinalStoryElement(finalstorydiv, round, callText, responseText)
 
     var storyTextDiv = document.createElement('div')
     storyText = document.createElement('text-start');
-    storyText.className = "mb-5";
+    storyText.className = "final-story-cls";
     storyText.textContent = round[0];
     storyTextDiv.appendChild(storyText);
     storyElem.appendChild(storyTextDiv);
@@ -410,7 +412,7 @@ function generateFinalStoryElement(finalstorydiv, round, callText, responseText)
 
     var answerTextDiv = document.createElement('div')
     answerText = document.createElement('text-start');
-    answerText.className = "mb-3";
+    answerText.className = "final-story-cls";
     answerText.textContent = round[1];
     answerTextDiv.appendChild(answerText);
     storyElem.appendChild(answerTextDiv);
@@ -434,7 +436,7 @@ function generateQAElement(playTraceDiv, data, label)
 
     var storyTextDiv = document.createElement('div')
     storyText = document.createElement('text-start');
-    storyText.className = "mb-5";
+    storyText.className = "final-story-cls";
     storyText.textContent = data;
     storyTextDiv.appendChild(storyText);
     storyElem.appendChild(storyTextDiv);
@@ -447,7 +449,7 @@ async function generateFinalStory() {
     console.log('Generating final story with selected clues to hide: ' + Object.keys(cluesToHide).join(', '));
     finalstorydiv=document.getElementById("final-story");
     finalstorydiv.style.removeProperty('display');
-    finalstorydiv.innerHTML = "";
+    finalstorydiv.innerHTML = 'Loading...';
     try {
         const response = await fetch(`${backendUrl}/generate_final_story`, {
             method: 'POST',
@@ -500,7 +502,7 @@ async function getAIPlayerQuestion() {
     var playTraceDiv=document.getElementById("play-trace-div");
     if (numQuestionsLeft == 0)
     {
-        gameOver(maxNumQuestions);
+        gameOver(maxNumQuestions, false);
         return;
     }
     try {
@@ -544,7 +546,7 @@ async function getAIHostAnswer() {
     var playTraceDiv=document.getElementById("play-trace-div");
     if (numQuestionsLeft == 0)
     {
-        gameOver(maxNumQuestions);
+        gameOver(maxNumQuestions, false);
         return;
     }
     try {
@@ -557,12 +559,6 @@ async function getAIHostAnswer() {
         });
         data = await response.json();
         var answer = data["answer"];
-        // var answer = [
-        //     "Is it a bird?", "No",
-        //     "Is it a tree?", "No",
-        //     "Is it a plane?", "No",
-        //     "Is it a worm?", "Yes",
-        // ]
         console.log(answer);
         // Check if options is a string and try to parse it
         if (typeof answer === 'string') {
@@ -577,16 +573,18 @@ async function getAIHostAnswer() {
         }
 
         if (Array.isArray(answer)) {
-            answer = answer[0]
+            answer = answer[0].toLowerCase();
             console.log(answer);
-            generateQAElement(playTraceDiv, answer, "Answer");
-            numQuestionsLeft -= 1;
-            if (answer.toLowerCase() == "right")
+            if (answer == winningAnswer)
             {
-                gameOver(maxNumQuestions - numQuestionsLeft)
+                generateQAElement(playTraceDiv, answer + "! You solved it!", "Answer");
+                numQuestionsLeft -= 1;
+                gameOver(maxNumQuestions - numQuestionsLeft, true)
             }
             else
             {
+                generateQAElement(playTraceDiv, answer, "Answer");
+                numQuestionsLeft -= 1;
                 getAIPlayerQuestion();
             }
         } else {
@@ -599,19 +597,30 @@ async function getAIHostAnswer() {
     }
 }
 
-function displayPlayResult(numberRounds)
+function displayPlayResult(numberRounds, solved)
 {
     const playResultDiv = document.getElementById("play-result-div");
     playResultDiv.style.display = "block";
     const playResult = document.getElementById("play-result");
     playResult.style.display = "block";
+    if (solved)
+    {
+        playResult.style += " background-color:green"
+        document.getElementById("play-result-solved").style.display = "block";
+        document.getElementById("play-result-unsolved").style.display = "none";
+    }
+    else
+    {
+        document.getElementById("play-result-solved").style.display = "none";
+        document.getElementById("play-result-unsolved").style.display = "block";
+    }
     document.getElementById("play-result-num-rounds").textContent = numberRounds;
     document.getElementById("play-result-score").textContent = numberRounds;
 }
 
-function gameOver(numGuesses)
+function gameOver(numGuesses, solved)
 {
-    displayPlayResult(numGuesses);
+    displayPlayResult(numGuesses, solved);
 }
 
 
