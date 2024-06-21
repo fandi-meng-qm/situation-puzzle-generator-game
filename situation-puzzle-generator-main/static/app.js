@@ -478,6 +478,7 @@ async function generateFinalStory() {
             console.assert(final_story.length == 2);
             final_puzzle = final_story[0];
             final_answer = final_story[1];
+            finalstorydiv.innerHTML = '';
             generateFinalStoryElement(finalstorydiv, [final_puzzle, final_answer], "Puzzle", "Answer")
 
         } else {
