@@ -315,7 +315,7 @@ async function submitForm() {
  */
 async function submitDraft() {
     console.log("submitDraft")
-    if (numCluesToSelect == 0) {
+    if (numCluesToSelect < maxNumCluesToConceal) {
         // TODO: submit
         console.log(cluesToHide)
         finalstorydiv=document.getElementById("final-story");
@@ -486,6 +486,7 @@ async function getAIPlayerQuestion() {
     var playTraceDiv=document.getElementById("play-trace-div");
     if (numQuestionsLeft == 0)
     {
+        gameOver(maxNumQuestions);
         return;
     }
     try {
@@ -498,12 +499,6 @@ async function getAIPlayerQuestion() {
         });
         data = await response.json();
         next_question = data[`question`];
-        // var next_question [
-        //     "Is it a bird?", "No",
-        //     "Is it a tree?", "No",
-        //     "Is it a plane?", "No",
-        //     "Is it a worm?", "Yes",
-        // ]
         console.log(next_question);
         // Check if options is a string and try to parse it
         if (typeof next_question === 'string') {
@@ -533,6 +528,7 @@ async function getAIHostAnswer() {
     var playTraceDiv=document.getElementById("play-trace-div");
     if (numQuestionsLeft == 0)
     {
+        gameOver(maxNumQuestions);
         return;
     }
     try {
@@ -544,7 +540,7 @@ async function getAIHostAnswer() {
             body: JSON.stringify({"puzzle": final_puzzle, "true_answer": final_answer,  "question": next_question})
         });
         data = await response.json();
-        var answer = data[`answer`];
+        var answer = data["answer"];
         // var answer = [
         //     "Is it a bird?", "No",
         //     "Is it a tree?", "No",
@@ -557,16 +553,24 @@ async function getAIHostAnswer() {
             try {
                 answer = JSON.parse(answer);
             } catch (e) {
-                console.error('Error parsing story and answer:', e);
+                console.error(`Error parsing story and answer ${answer}:`, e);
                 return;
             }
         }
-        console.log(answer);
 
         if (Array.isArray(answer)) {
-            generateQAElement(playTraceDiv, answer[0], "Answer");
+            answer = answer[0]
+            console.log(answer);
+            generateQAElement(playTraceDiv, answer, "Answer");
             numQuestionsLeft -= 1;
-            getAIPlayerQuestion();
+            if (answer.toLowerCase() == "right")
+            {
+                gameOver(maxNumQuestions - numQuestionsLeft)
+            }
+            else
+            {
+                getAIPlayerQuestion();
+            }
         } else {
             console.error('Error: options is not an array');
         }
@@ -583,6 +587,11 @@ function displayPlayResult(numberRounds)
     playResult.style.display = "block";
     document.getElementById("play-result-num-rounds").textContent = numberRounds;
     document.getElementById("play-result-score").textContent = numberRounds;
+}
+
+function gameOver(numGuesses)
+{
+    displayPlayResult(numGuesses);
 }
 
 
