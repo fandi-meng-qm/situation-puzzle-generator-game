@@ -235,7 +235,7 @@ def generate_ai_game_host(puzzle, true_answer, question):
     messages.append(
         {"role": "user",
          "content": f"You are the host of a situation puzzle game. Here is the puzzle: {puzzle} and its answer: {true_answer}. \
-         The player has responded with: {true_answer}. If the player's response is a question, please answer it with [\"yes\"] or [\"no\"] based strictly on the given puzzle and answer. \
+         The player has responded with: {question}. If the player's response is a question, please answer it with [\"yes\"] or [\"no\"] based strictly on the given puzzle and answer. \
          If the player's response is an answer, please evaluate it. If the player's answer matches the provided answer exactly, respond with [\"right\"]. If it does not match, respond with [\"wrong\"]. \
          Remember, the puzzle is: {puzzle} and the correct answer is: {true_answer}. \
          Please reply in an array format and do not provide any additional commentary."
