@@ -192,6 +192,8 @@ function regenerateOptions(section) {
                     options = JSON.parse(options);
                 } catch (e) {
                     console.error('Error parsing options:', e);
+                    buttonGroup.innerHTML = ''; // Clear existing options
+                    buttonGroup.textContent = "Something went wrong. Please try again";
                     return;
                 }
             }
@@ -208,9 +210,15 @@ function regenerateOptions(section) {
                 });
             } else {
                 console.error('Error: options is not an array');
+                buttonGroup.innerHTML = ''; // Clear existing options
+                buttonGroup.textContent = "Something went wrong. Please try again";
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error)
+                buttonGroup.innerHTML = ''; // Clear existing options
+                buttonGroup.textContent = "Something went wrong. Please try again";
+        });
 }
 
 async function splitDraftStory(draftStory)
@@ -252,6 +260,8 @@ async function submitForm() {
                 sentences = JSON.parse(sentences);
             } catch (e) {
                 console.error('Error parsing story and answer:', e);
+                responseDiv.innerHTML = ''; // Clear existing options
+                responseDiv.textContent = "Something went wrong. Please try again";
                 return;
             }
         }
@@ -455,6 +465,8 @@ async function generateFinalStory() {
                 final_story = JSON.parse(final_story);
             } catch (e) {
                 console.error(`Error parsing story ${final_story} and answer:`, e);
+                finalstorydiv.innerHTML = ''; // Clear existing options
+                finalstorydiv.textContent = "Something went wrong. Please try again";
                 return;
             }
         }
@@ -468,6 +480,8 @@ async function generateFinalStory() {
 
         } else {
             console.error('Error: options is not an array');
+            finalstorydiv.innerHTML = ''; // Clear existing options
+            finalstorydiv.textContent = "Something went wrong. Please try again";
         }
     } catch (error) {
         finalstorydiv.innerHTML = 'Error: ' + error.message;
@@ -506,6 +520,8 @@ async function getAIPlayerQuestion() {
                 next_question = JSON.parse(next_question);
             } catch (e) {
                 console.error('Error parsing story and answer:', e);
+                playTraceDiv.innerHTML = ''; // Clear existing options
+                playTraceDiv.textContent = "Something went wrong. Please try again";
                 return;
             }
         }
@@ -554,6 +570,8 @@ async function getAIHostAnswer() {
                 answer = JSON.parse(answer);
             } catch (e) {
                 console.error(`Error parsing story and answer ${answer}:`, e);
+                playTraceDiv.innerHTML = ''; // Clear existing options
+                playTraceDiv.textContent = "Something went wrong. Please try again";
                 return;
             }
         }
@@ -573,6 +591,8 @@ async function getAIHostAnswer() {
             }
         } else {
             console.error('Error: options is not an array');
+            playTraceDiv.innerHTML = ''; // Clear existing options
+            playTraceDiv.textContent = "Something went wrong. Please try again";
         }
     } catch (error) {
         playTraceDiv.innerHTML = 'Error: ' + error.message;
